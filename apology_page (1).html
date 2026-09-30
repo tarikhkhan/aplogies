@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>For Prachi 💌</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&family=Playfair+Display:ital,wght@1,600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Nunito', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                    colors: {
+                        pastel: '#ffe4e1',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #fdf2f8 0%, #ffe4e1 100%);
+            background-attachment: fixed;
+            overflow: hidden; /* Important for runaway button and floating elements */
+            touch-action: manipulation; /* Improves mobile tap behavior */
+            font-family: 'Nunito', sans-serif;
+        }
+
+        /* --- Floating Background Emojis --- */
+        .floating-emoji {
+            position: absolute;
+            bottom: -50px;
+            font-size: 2rem;
+            opacity: 0.7;
+            animation: floatUp linear forwards;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) rotate(0deg) scale(0.8); opacity: 0; }
+            10% { opacity: 0.7; }
+            90% { opacity: 0.7; }
+            100% { transform: translateY(-110vh) rotate(360deg) scale(1.2); opacity: 0; }
+        }
+
+        /* --- Layout Layers --- */
+        .screen-layer {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: opacity 0.8s ease-in-out, visibility 0.8s;
+            padding: 1rem;
+        }
+
+        .hidden-screen {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .active-screen {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        /* --- Envelope CSS Art --- */
+        .envelope-wrapper {
+            position: relative;
+            width: 280px;
+            height: 200px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            z-index: 20;
+        }
+        
+        .envelope-wrapper:hover {
+            transform: scale(1.05) translateY(-5px);
+        }
+
+        .env-back {
+            position: absolute;
+            inset: 0;
+            background-color: #f472b6; /* pink-400 */
+            border-radius: 12px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        }
+
+        .env-letter {
+            position: absolute;
+            left: 5%;
+            right: 5%;
+            top: 10%;
+            bottom: 5%;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1) inset;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: #ec4899;
+            z-index: 22;
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .env-flap-left {
+            position: absolute;
+            inset: 0;
+            background-color: #fbcfe8; /* pink-200 */
+            clip-path: polygon(0 0, 50% 50%, 0 100%);
+            border-radius: 12px;
+            z-index: 25;
+            pointer-events: none;
+        }
+
+        .env-flap-right {
+            position: absolute;
+            inset: 0;
+            background-color: #fbcfe8; /* pink-200 */
+            clip-path: polygon(100% 0, 50% 50%, 100% 100%);
+            border-radius: 12px;
+            z-index: 25;
+            pointer-events: none;
+        }
+
+        .env-flap-bottom {
+            position: absolute;
+            inset: 0;
+            background-color: #f9a8d4; /* pink-300 */
+            clip-path: polygon(0 100%, 50% 50%, 100% 100%);
+            border-radius: 12px;
+            z-index: 26;
+            pointer-events: none;
+        }
+
+        .env-flap-top {
+            position: absolute;
+            inset: 0;
+            background-color: #ec4899; /* pink-500 */
+            clip-path: polygon(0 0, 100% 0, 50% 50%);
+            transform-origin: top;
+            transition: transform 0.5s ease-in-out;
+            border-radius: 12px 12px 0 0;
+            z-index: 27;
+        }
+
+        /* Classes applied via JS for animation */
+        .flap-open { transform: rotateX(180deg); z-index: 21; }
+        .letter-out { transform: translateY(-120px) rotate(-5deg); z-index: 28; }
+
+        /* --- Typewriter cursor --- */
+        .typewriter-cursor::after {
+            content: '|';
+            animation: blink 1s step-start infinite;
+            color: #ec4899;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* --- Runaway Button --- */
+        #btn-no {
+            transition: top 0.15s cubic-bezier(0.25, 1, 0.5, 1), left 0.15s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* --- Bouncy animations --- */
+        .bounce-in {
+            animation: bounceIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes bounceIn {
+            0% { opacity: 0; transform: scale(0.5); }
+            50% { opacity: 1; transform: scale(1.05); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="floating-container" class="absolute inset-0 w-full h-full pointer-events-none z-0"></div>
+
+    <div id="screen-1" class="screen-layer active-screen">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-black text-pink-500 drop-shadow-sm mb-2">Hey...</h1>
+            <p class="text-pink-400 font-bold animate-pulse">Tap to Open 💌</p>
+        </div>
+
+        <div class="envelope-wrapper" id="envelope" aria-label="Tap to open the letter">
+            <div class="env-back"></div>
+            <div class="env-letter" id="letter">Read me! 👀</div>
+            <div class="env-flap-left"></div>
+            <div class="env-flap-right"></div>
+            <div class="env-flap-bottom"></div>
+            <div class="env-flap-top" id="top-flap"></div>
+        </div>
+    </div>
+
+    <div id="screen-2" class="screen-layer hidden-screen">
+        <div class="w-full max-w-md bg-white/90 backdrop-blur-md rounded-3xl p-6 sm:p-8 shadow-2xl border-4 border-pink-100">
+            <!-- Typewriter text area -->
+            <div class="min-h-[160px] bg-pink-50 rounded-2xl p-5 mb-6 border border-pink-100 shadow-inner">
+                <p id="type-text" class="text-lg sm:text-xl font-bold text-gray-700 leading-relaxed typewriter-cursor"></p>
+            </div>
+            
+            <!-- Question & Buttons (Hidden initially) -->
+            <div id="question-area" class="text-center opacity-0 transition-opacity duration-1000">
+                <h2 class="text-2xl font-black text-pink-500 mb-6 drop-shadow-sm">So... am I forgiven? 🥺</h2>
+                
+                <div class="relative w-full h-24 flex justify-center items-center gap-6">
+                    <button id="btn-yes" class="bg-gradient-to-r from-pink-400 to-pink-500 text-white font-black py-4 px-8 rounded-full shadow-[0_5px_15px_rgba(236,72,153,0.4)] hover:shadow-[0_8px_25px_rgba(236,72,153,0.6)] hover:-translate-y-1 transform transition-all active:scale-95 text-xl z-20 flex items-center gap-2 border-2 border-white">
+                        Yes 😇
+                    </button>
+                    
+                    <button id="btn-no" class="bg-white text-pink-500 font-black py-4 px-8 rounded-full shadow-[0_5px_15px_rgba(0,0,0,0.1)] text-xl border-2 border-pink-200 z-30 flex items-center gap-2">
+                        No 🏃‍♀️
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-3" class="screen-layer hidden-screen">
+        <div class="w-full max-w-md bg-white/95 backdrop-blur-xl p-8 rounded-[2rem] shadow-2xl border-4 border-pink-200 text-center transform transition-all duration-700 relative overflow-hidden">
+            
+            <!-- Decorative Blobs -->
+            <div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-pink-300 rounded-full opacity-30 blur-2xl pointer-events-none"></div>
+            <div class="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-yellow-200 rounded-full opacity-30 blur-2xl pointer-events-none"></div>
+            
+            <h1 class="text-4xl mb-4 relative z-10">✨💖✨</h1>
+            
+            <div class="bg-gradient-to-br from-pink-50 to-white rounded-2xl p-6 shadow-inner border border-pink-100 relative z-10 my-6">
+                <p class="font-serif text-xl sm:text-2xl text-gray-800 leading-relaxed font-semibold italic">
+                    Phool kabhi dubara nhi khilte<br>
+                    janam kabhi dubara nhi milta<br>
+                    yun toh mill jaate hai hazaron mgr<br>
+                    jisse dill se chaaho woh dubara nhi milta ❤️
+                </p>
+            </div>
+            
+            <p class="text-2xl font-black text-pink-500 mt-6 relative z-10 drop-shadow-sm bounce-in" style="animation-delay: 1s;">
+                Yayy! Now please give a big smile! 😸✨
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. Background Floating Emojis ---
+        const floatingContainer = document.getElementById('floating-container');
+        const emojis = ['💖', '🌸', '🥺', '✨', '😹', '💕', '🫶'];
+
+        function spawnEmoji() {
+            const el = document.createElement('div');
+            el.classList.add('floating-emoji');
+            el.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+            
+            // Randomize styling
+            el.style.left = `${Math.random() * 100}vw`;
+            const duration = Math.random() * 6 + 6; // 6-12s
+            el.style.animationDuration = `${duration}s`;
+            el.style.fontSize = `${Math.random() * 1 + 1.5}rem`;
+            
+            floatingContainer.appendChild(el);
+            
+            // Clean up
+            setTimeout(() => el.remove(), duration * 1000);
+        }
+
+        // Spawn initially and set interval
+        for(let i=0; i<10; i++) spawnEmoji(); 
+        setInterval(spawnEmoji, 800);
+
+        // --- STREAMING_CHUNK:Setting up DOM variables... ---
+        const screen1 = document.getElementById('screen-1');
+        const screen2 = document.getElementById('screen-2');
+        const screen3 = document.getElementById('screen-3');
+        
+        const envelope = document.getElementById('envelope');
+        const topFlap = document.getElementById('top-flap');
+        const letter = document.getElementById('letter');
+        
+        const typeTextEl = document.getElementById('type-text');
+        const questionArea = document.getElementById('question-area');
+        
+        const btnYes = document.getElementById('btn-yes');
+        const btnNo = document.getElementById('btn-no');
+
+        // --- STREAMING_CHUNK:Envelope Animation Logic... ---
+        envelope.addEventListener('click', () => {
+            // 1. Open the flap
+            topFlap.classList.add('flap-open');
+            
+            // 2. Slide the letter out
+            setTimeout(() => {
+                letter.classList.add('letter-out');
+            }, 400);
+
+            // 3. Transition to next screen
+            setTimeout(() => {
+                screen1.classList.remove('active-screen');
+                screen1.classList.add('hidden-screen');
+                
+                screen2.classList.remove('hidden-screen');
+                screen2.classList.add('active-screen');
+                
+                // Start typing shortly after screen 2 appears
+                setTimeout(startTypewriter, 500);
+            }, 1800);
+        });
+
+        // --- STREAMING_CHUNK:Typewriter Effect Logic... ---
+        const msg = "Helooi Prachi... meko nhi maalum tha that your mood was off so maaf kr denaa plz. Mai toh Mazak kr rha thaa bss todha timing shyd galat hogya Mazak krne ka🥲";
+        let charIndex = 0;
+        const typingSpeed = 50; 
+
+        function startTypewriter() {
+            if (charIndex < msg.length) {
+                typeTextEl.innerHTML += msg.charAt(charIndex);
+                charIndex++;
+                setTimeout(startTypewriter, typingSpeed);
+            } else {
+                // Done typing
+                setTimeout(() => {
+                    typeTextEl.classList.remove('typewriter-cursor');
+                    questionArea.classList.remove('opacity-0');
+                    // Reset button No position in case of previous bugs
+                    btnNo.style.position = 'relative';
+                    btnNo.style.left = '0';
+                    btnNo.style.top = '0';
+                }, 800);
+            }
+        }
+
+        // --- STREAMING_CHUNK:Runaway Button Math and Logic... ---
+        let isDodging = false;
+
+        function dodge(e) {
+            // Prevent actual click/tap if they somehow hit it
+            if(e) e.preventDefault(); 
+            
+            if (isDodging) return;
+            isDodging = true;
+
+            // Change to fixed so it can escape anywhere on screen
+            btnNo.style.position = 'fixed';
+            
+            // Safe boundaries (padding of 20px from screen edges)
+            const padding = 20;
+            const maxX = window.innerWidth - btnNo.offsetWidth - padding;
+            const maxY = window.innerHeight - btnNo.offsetHeight - padding;
+            
+            // Generate random location, ensuring it stays on screen
+            const randomX = Math.max(padding, Math.floor(Math.random() * maxX));
+            const randomY = Math.max(padding, Math.floor(Math.random() * maxY));
+
+            btnNo.style.left = `${randomX}px`;
+            btnNo.style.top = `${randomY}px`;
+            
+            // Allow dodging again after transition completes
+            setTimeout(() => { isDodging = false; }, 150); 
+        }
+
+        // Extremely aggressive event listeners to prevent clicking
+        btnNo.addEventListener('mouseover', dodge);
+        btnNo.addEventListener('touchstart', dodge, { passive: false });
+        btnNo.addEventListener('click', dodge); // Fallback if they manage a click
+
+        // --- STREAMING_CHUNK:Yes Button Success Logic & Confetti... ---
+        btnYes.addEventListener('click', () => {
+            // Transition to final screen
+            screen2.classList.remove('active-screen');
+            screen2.classList.add('hidden-screen');
+            
+            setTimeout(() => {
+                screen3.classList.remove('hidden-screen');
+                screen3.classList.add('active-screen');
+                
+                // Hide runaway button permanently
+                btnNo.style.display = 'none'; 
+                
+                // Fire massive confetti blast!
+                fireEmojiConfetti();
+            }, 600);
+        });
+
+        function fireEmojiConfetti() {
+            var duration = 5 * 1000;
+            var animationEnd = Date.now() + duration;
+            var defaults = { startVelocity: 40, spread: 360, ticks: 100, zIndex: 100 };
+
+            function randomInRange(min, max) { return Math.random() * (max - min) + min; }
+
+            // Standard colourful confetti blast
+            confetti({
+                particleCount: 150,
+                spread: 100,
+                origin: { y: 0.6 },
+                colors: ['#f472b6', '#fb7185', '#fde047', '#38bdf8', '#ffffff']
+            });
+
+            // Continuous bursts for a few seconds
+            var interval = setInterval(function() {
+                var timeLeft = animationEnd - Date.now();
+                if (timeLeft <= 0) return clearInterval(interval);
+                
+                var particleCount = 40 * (timeLeft / duration);
+                
+                confetti(Object.assign({}, defaults, { 
+                    particleCount, 
+                    colors: ['#f472b6', '#fb7185', '#ffffff'],
+                    origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } 
+                }));
+                confetti(Object.assign({}, defaults, { 
+                    particleCount, 
+                    colors: ['#f9a8d4', '#fef08a'],
+                    origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } 
+                }));
+            }, 250);
+        }
+    </script>
+</body>
+</html>
